@@ -24,8 +24,12 @@ from subprocess import call
 import os
 import sys
 
+global m_Home
 global m_History
 global m_Aliases
+global m_Exit
+global m_Path
+global m_Args
 
 ################################################################################
 # Displays the shell prompt.  This prompt includes the name of the current user,
@@ -51,21 +55,22 @@ def prompt():
 # found, then the line is printed
 def searchHistory(word):
 ################################################################################
-    m_History = open(HOME + '.shell_history','r')
+    history = open(m_History,'r')
 
-    for line in m_History:
+    for line in history:
         if word in line:
             print line
     
-    m_History.close()
+    history.close()
 
 ################################################################################
 # Parses the read line into a list for processing, and returns said list.
 def readLine(line):
 ################################################################################
+    global m_Exit
+
     if line == 'exit':
-        global EXIT
-        EXIT = True
+        m_Exit = True
         return
     
     elif '???' in line:
@@ -74,7 +79,7 @@ def readLine(line):
     
     elif 'cd' in line:
         if '~' in line.split()[1]:
-            os.chdir(HOME)
+            os.chdir(m_Home)
         else:
             os.chdir(line.split()[1])
         return
@@ -85,82 +90,83 @@ def readLine(line):
 ################################################################################
 # Searches the directories in the PATH for the parsed command.  If the command
 # is found, then the full path to the executable is placed into the first index
-# of the args list, and True is returned.  Otherwise, the list is left alone and
+# of the m_Args list, and True is returned.  Otherwise, the list is left alone and
 # False is returned.
 def searchPath():
 ################################################################################
-    for dir in PATH:
+    global m_Args
+
+    for dir in m_Path:
         # combine the command and this PATH entry
-        file = dir + '/' + ARGS[0]
+        file = dir + '/' + m_Args[0]
         
         if os.path.exists(file):
-            ARGS[0] = file
+            m_Args[0] = file
             return True
     
     return False
 
 ################################################################################
 # Searches the .shell_aliases file for aliases.  If one is matched to the
-# current command, then this command is expanded and placed into the ARGS
-# variable, and True is returned.  Otherwise, ARGS is cleared, and False is
+# current command, then this command is expanded and placed into the m_Args
+# variable, and True is returned.  Otherwise, m_Args is cleared, and False is
 # returned.
 def searchAliases():
 ################################################################################
-    global ARGS
-    m_Aliases = open(HOME + '.shell_aliases', 'r')
-    
-    for line in m_Aliases:
+    aliases = open(m_Aliases, 'r')
+    global m_Args
+
+    for line in aliases:
         # skip lines that start with #... those are comments
         if not '#' in line:
             alias = line.split('=')
 
-            if ARGS[0] in alias[0]:
+            if m_Args[0] in alias[0]:
                 # parse the alias line...
-                ARGS = alias[1].split()
-                m_Aliases.close()
+                m_Args = alias[1].split()
+                aliases.close()
                 return True
     
-    m_Aliases.close()
+    aliases.close()
     return False
 
 ################################################################################
 # Redirects output to the specified stream.
-def redirect(args):
+def redirect(m_Args):
 ################################################################################
-    #rIn = open(sys.stdin)
-    rOut = 0
-    #rErr = sys.stderr
-    
-    if '>' in args:
-        rIn = open(args[args.index('>') + 1], 'w')
-        args.remove(args[args.index('>') + 1])
-        args.remove('>')
+    # #rIn = open(sys.stdin)
+    # rOut = 0
+    # #rErr = sys.stderr
+    # 
+    # if '>' in m_Args:
+    #     rIn = open(m_Args[m_Args.index('>') + 1], 'w')
+    #     m_Args.remove(m_Args[m_Args.index('>') + 1])
+    #     m_Args.remove('>')
 
-    if '2>' in args:
-        rErr = open(args[args.index('2>') + 1], 'w')
-        args.remove(args[args.index('2>') + 1])
-        args.remove('2>')
+    # if '2>' in m_Args:
+    #     rErr = open(m_Args[m_Args.index('2>') + 1], 'w')
+    #     m_Args.remove(m_Args[m_Args.index('2>') + 1])
+    #     m_Args.remove('2>')
 
-    if '<' in args:
-        rIn = open(args[args.index('<') + 1], 'w')
-        args.remove(args[args.index('<') + 1])
-        args.remove('<')
+    # if '<' in m_Args:
+    #     rIn = open(m_Args[m_Args.index('<') + 1], 'w')
+    #     m_Args.remove(m_Args[m_Args.index('<') + 1])
+    #     m_Args.remove('<')
 
-    call(args, stdout = rOut)
-    #stdin = rIn, stdout = rOut, stderr = rErr)
+    call(m_Args)
 
 ################################################################################
-# Executes the command stored in ARGS.  Normally, this is a simple call to the
+# Executes the command stored in m_Args.  Normally, this is a simple call to the
 # call() function.  However, we need to check for any redirection, and act
 # accordingly.
 def execute():
 ################################################################################
     # redirected output
-    if '>' in ARGS or '<' in ARGS or '2>' in ARGS:
-        redirect(ARGS)
+    if '>' in m_Args or '<' in m_Args or '2>' in m_Args:
+        redirect(m_Args)
 
     # backgrounded execution
-    if '&' in ARGS:
+    if '&' in m_Args:
         try:
             pid = os.fork()
     
@@ -170,41 +176,42 @@ def execute():
         
         if pid == 0:
             print 'forking process to background...'
-            ARGS.remove(ARGS[-1])
-            os.execv(ARGS[0], ARGS)
+            m_Args.remove(m_Args[-1])
+            os.execv(m_Args[0], m_Args)
 
     # normal execution
     else:
-        call(ARGS)
+        call(m_Args)
 
 ################################################################################
 # The main program
 ################################################################################
-EXIT = False
-HOME = '/home/' + os.getlogin() + '/'
-PATH = os.environ['PATH'].split(os.pathsep)
+m_Home = '/home/' + os.getlogin() + '/'
+m_History = m_Home + '.shell_history'
+m_Aliases = m_Home + '.shell_aliases'
+m_Exit = False
+m_Path = os.environ['PATH'].split(os.pathsep)
 
-while not EXIT:
+while not m_Exit:
     line = prompt()
-    ARGS = readLine(line)
-   
-    if not EXIT and ARGS:
-        STATUS = searchAliases() or searchPath()
+    m_Args = readLine(line)
 
-        if not STATUS:
-            print 'Command `%s` not found' % ARGS[0]
+    if not m_Exit and m_Args:
+        status = searchAliases() or searchPath()
+        print status
+
+        if not status:
+            print 'Command `%s` not found' % m_Args[0]
         
         else:
             # add the command to the .shell_history file
-            m_History = open(HOME + '.shell_history', 'a')
+            history = open(m_History, 'a')
             
-            for string in ARGS:
-                m_History.write(string + ' ')
+            for string in m_Args:
+                history.write(string + ' ')
 
-            m_History.write('\n')
-            m_History.close()
+            history.write('\n')
+            history.close()
            
             execute()
 
-# BEWARE: the history file is cleared at program termination
-open(HOME + '.shell_history','w').close()
