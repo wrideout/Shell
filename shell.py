@@ -90,8 +90,8 @@ def readLine(line):
 ################################################################################
 # Searches the directories in the PATH for the parsed command.  If the command
 # is found, then the full path to the executable is placed into the first index
-# of the m_Args list, and True is returned.  Otherwise, the list is left alone and
-# False is returned.
+# of the m_Args list, and True is returned.  Otherwise, the list is left alone 
+# and False is returned.
 def searchPath():
 ################################################################################
     global m_Args
@@ -198,7 +198,6 @@ while not m_Exit:
 
     if not m_Exit and m_Args:
         status = searchAliases() or searchPath()
-        print status
 
         if not status:
             print 'Command `%s` not found' % m_Args[0]
