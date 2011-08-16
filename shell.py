@@ -11,6 +11,7 @@
 #   -Command execution/displaying output
 #
 #   William Rideout
+#   Dustin Schoenbrun
 #   
 # Changelog:
 #   8/15/11 - Completed basic functionality, alias functionality, and history
