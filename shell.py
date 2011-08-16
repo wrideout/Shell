@@ -24,6 +24,9 @@ from subprocess import call
 import os
 import sys
 
+global m_History
+global m_Aliases
+
 ################################################################################
 # Displays the shell prompt.  This prompt includes the name of the current user,
 # the hostname of the current computer, and the current working directory.
@@ -48,14 +51,13 @@ def prompt():
 # found, then the line is printed
 def searchHistory(word):
 ################################################################################
-    global HISTORY
-    HISTORY = open(HOME + '.shell_history','r')
+    m_History = open(HOME + '.shell_history','r')
 
-    for line in HISTORY:
+    for line in m_History:
         if word in line:
             print line
     
-    HISTORY.close()
+    m_History.close()
 
 ################################################################################
 # Parses the read line into a list for processing, and returns said list.
@@ -105,9 +107,9 @@ def searchPath():
 def searchAliases():
 ################################################################################
     global ARGS
-    file = open(HOME + '.shell_aliases', 'r')
+    m_Aliases = open(HOME + '.shell_aliases', 'r')
     
-    for line in file:
+    for line in m_Aliases:
         # skip lines that start with #... those are comments
         if not '#' in line:
             alias = line.split('=')
@@ -115,10 +117,10 @@ def searchAliases():
             if ARGS[0] in alias[0]:
                 # parse the alias line...
                 ARGS = alias[1].split()
-                file.close()
+                m_Aliases.close()
                 return True
     
-    file.close()
+    m_Aliases.close()
     return False
 
 ################################################################################
@@ -194,13 +196,13 @@ while not EXIT:
         
         else:
             # add the command to the .shell_history file
-            HISTORY = open(HOME + '.shell_history', 'a')
+            m_History = open(HOME + '.shell_history', 'a')
             
             for string in ARGS:
-                HISTORY.write(string + ' ')
+                m_History.write(string + ' ')
 
-            HISTORY.write('\n')
-            HISTORY.close()
+            m_History.write('\n')
+            m_History.close()
            
             execute()
 
