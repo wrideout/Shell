@@ -85,7 +85,12 @@ def readLine(line):
         return
     
     else:
-        return line.split()
+        args = line.split()
+        
+        # check for the ~ shortcut, replace it with the value of m_Home
+        args = [x.replace('~', m_Home) if ('~' in x) else x for x in args]   
+   
+        return args
 
 ################################################################################
 # Searches the directories in the PATH for the parsed command.  If the command
@@ -182,7 +187,6 @@ def execute():
     # normal execution
     else:
         call(m_Args)
-
 
 ################################################################################
 # Writes the current contents of m_Args to the command history.  If there are at
