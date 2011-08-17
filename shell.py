@@ -192,8 +192,6 @@ def writeToHistory():
 ################################################################################
     count = len(open(m_History).readlines())
     
-    print count
-    
     if count >= 1000:
         # get a list of the file contents
         history = open(m_History, 'r')
