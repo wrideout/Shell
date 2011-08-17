@@ -183,12 +183,6 @@ def execute():
     else:
         call(m_Args)
 
-################################################################################
-# Counts the number of discreet entries (lines) in the command history and
-# returns that number.
-def getHistorySize():
-################################################################################
-    return len(open(m_History).readlines())
 
 ################################################################################
 # Writes the current contents of m_Args to the command history.  If there are at
@@ -196,7 +190,7 @@ def getHistorySize():
 # bottom, and the uppermost line is deleted.
 def writeToHistory():
 ################################################################################
-    count = getHistorySize()
+    count = len(open(m_History).readlines())
     
     print count
     
