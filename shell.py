@@ -91,8 +91,8 @@ def readLine(line):
 ################################################################################
 # Searches the directories in the PATH for the parsed command.  If the command
 # is found, then the full path to the executable is placed into the first index
-# of the m_Args list, and True is returned.  Otherwise, the list is left alone and
-# False is returned.
+# of the m_Args list, and True is returned.  Otherwise, the list is left alone 
+# and False is returned.
 def searchPath():
 ################################################################################
     global m_Args
@@ -185,6 +185,44 @@ def execute():
         call(m_Args)
 
 ################################################################################
+# Counts the number of discreet entries (lines) in the command history and
+# returns that number.
+def getHistorySize():
+################################################################################
+    return len(open(m_History).readlines())
+
+################################################################################
+# Writes the current contents of m_Args to the command history.  If there are at
+# least 1000 entries in the command history, then the new line is written to the
+# bottom, and the uppermost line is deleted.
+def writeToHistory():
+################################################################################
+    count = getHistorySize()
+    
+    if count >= 1000:
+        # get a list of the file contents
+        history = open(m_History, 'r')
+        lines = history.readlines()
+        history.close()
+
+        # remove the first index of line
+        lines.remove(lines[0])
+
+        # write the remaining lines to file
+        history = open(m_History, 'w')
+        history.write("".join(lines))
+        history.close()
+    
+    history = open(m_History, 'a')
+    
+    for string in m_Args:
+        history.write(string + ' ')
+
+    history.write('\n')
+    history.close()
+
+
+################################################################################
 # The main program
 ################################################################################
 m_Home = '/home/' + os.getlogin() + '/'
@@ -199,20 +237,13 @@ while not m_Exit:
 
     if not m_Exit and m_Args:
         status = searchAliases() or searchPath()
-        print status
 
         if not status:
             print 'Command `%s` not found' % m_Args[0]
         
         else:
             # add the command to the .shell_history file
-            history = open(m_History, 'a')
-            
-            for string in m_Args:
-                history.write(string + ' ')
+            writeToHistory()
 
-            history.write('\n')
-            history.close()
-           
             execute()
 
