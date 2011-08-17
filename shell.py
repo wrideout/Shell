@@ -184,6 +184,41 @@ def execute():
         call(m_Args)
 
 ################################################################################
+# Counts the number of discreet entries (lines) in the command history and
+# returns that number.
+def getHistorySize():
+################################################################################
+    return len(open(m_History).readlines())
+
+################################################################################
+# Writes the current contents of m_Args to the command history.  If there are at
+# least 1000 entries in the command history, then the new line is written to the
+# bottom, and the uppermost line is deleted.
+def writeToHistory():
+################################################################################
+    count = getHistorySize()
+    
+    print count
+    
+    if count >= 5:
+        history = open(m_History, 'r')
+        lines = history.readlines()
+        history.close()
+
+        history = open(m_History, 'w')
+        history.write('\n'.join(lines[1:]))
+        history.close()
+    
+    history = open(m_History, 'a')
+    
+    for string in m_Args:
+        history.write(string + ' ')
+
+    history.write('\n')
+    history.close()
+
+
+################################################################################
 # The main program
 ################################################################################
 m_Home = '/home/' + os.getlogin() + '/'
@@ -204,13 +239,7 @@ while not m_Exit:
         
         else:
             # add the command to the .shell_history file
-            history = open(m_History, 'a')
-            
-            for string in m_Args:
-                history.write(string + ' ')
+            writeToHistory()
 
-            history.write('\n')
-            history.close()
-           
             execute()
 
