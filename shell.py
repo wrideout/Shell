@@ -200,13 +200,18 @@ def writeToHistory():
     
     print count
     
-    if count >= 5:
+    if count >= 1000:
+        # get a list of the file contents
         history = open(m_History, 'r')
         lines = history.readlines()
         history.close()
 
+        # remove the first index of line
+        lines.remove(lines[0])
+
+        # write the remaining lines to file
         history = open(m_History, 'w')
-        history.write('\n'.join(lines[1:]))
+        history.write("".join(lines))
         history.close()
     
     history = open(m_History, 'a')
