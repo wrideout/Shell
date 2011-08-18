@@ -49,11 +49,17 @@ def prompt():
     if not cwd:
         cwd = '/'
 
-    return raw_input('\n' + username + '@' + hostname + ':' + cwd + '> ')
+    try:
+        line = raw_input('\n' + username + '@' + hostname + ':' + cwd + '> ')
+        return line
+    
+    except EOFError, e:
+        exit(1)
 
 ################################################################################
 # Searches the .shell_history file for the passed string.  If a matching line is
-# found, then the line is printed
+# found, then the line is printed.  Only the first line that is found is
+# matched.
 def searchHistory(word):
 ################################################################################
     history = open(m_History,'r')
@@ -61,6 +67,7 @@ def searchHistory(word):
     for line in history:
         if word in line:
             print line
+            break
     
     history.close()
 
@@ -69,24 +76,34 @@ def searchHistory(word):
 def readLine(line):
 ################################################################################
     global m_Exit
-
+    args = line.split()
+        
+    # check for the ~ shortcut, replace it with the value of m_Home
+    args = [x.replace('~', m_Home) if ('~' in x) else x for x in args]   
+    
+    writeToHistory(args)
+    
     if line == 'exit':
         m_Exit = True
-        return
+        return 
     
     elif '???' in line:
         searchHistory(line.split()[1])
-        return
+        return 
     
     elif 'cd' in line:
-        if '~' in line.split()[1]:
-            os.chdir(m_Home)
+        path = args[1]
+
+        if os.path.exists(path):
+            os.chdir(path)
+        
         else:
-            os.chdir(line.split()[1])
+            print 'cd: cannot access \'%s\': No such file or directory' % path
+        
         return
-    
+   
     else:
-        return line.split()
+        return args
 
 ################################################################################
 # Searches the directories in the PATH for the parsed command.  If the command
@@ -132,39 +149,30 @@ def searchAliases():
     return False
 
 ################################################################################
-# Redirects output to the specified stream.
-def redirect(m_Args):
-################################################################################
-    # #rIn = open(sys.stdin)
-    # rOut = 0
-    # #rErr = sys.stderr
-    # 
-    # if '>' in m_Args:
-    #     rIn = open(m_Args[m_Args.index('>') + 1], 'w')
-    #     m_Args.remove(m_Args[m_Args.index('>') + 1])
-    #     m_Args.remove('>')
-
-    # if '2>' in m_Args:
-    #     rErr = open(m_Args[m_Args.index('2>') + 1], 'w')
-    #     m_Args.remove(m_Args[m_Args.index('2>') + 1])
-    #     m_Args.remove('2>')
-
-    # if '<' in m_Args:
-    #     rIn = open(m_Args[m_Args.index('<') + 1], 'w')
-    #     m_Args.remove(m_Args[m_Args.index('<') + 1])
-    #     m_Args.remove('<')
-
-    call(m_Args)
-
-################################################################################
 # Executes the command stored in m_Args.  Normally, this is a simple call to the
 # call() function.  However, we need to check for any redirection, and act
 # accordingly.
 def execute():
 ################################################################################
+    fout = sys.stdout
+    fin = sys.stdin
+    ferr = sys.stderr
+    
     # redirected output
-    if '>' in m_Args or '<' in m_Args or '2>' in m_Args:
-        redirect(m_Args)
+    if '>' in m_Args:
+        fout = open(m_Args[m_Args.index('>') + 1], 'w')
+        m_Args.remove(m_Args[m_Args.index('>') + 1])
+        m_Args.remove('>')
+
+    if '2>' in m_Args:
+        ferr = open(m_Args[m_Args.index('2>') + 1], 'w')
+        m_Args.remove(m_Args[m_Args.index('2>') + 1])
+        m_Args.remove('2>')
+
+    if '<' in m_Args:
+        fin = open(m_Args[m_Args.index('<') + 1], 'r')
+        m_Args.remove(m_Args[m_Args.index('<') + 1])
+        m_Args.remove('<')
 
     # backgrounded execution
     if '&' in m_Args:
@@ -178,26 +186,20 @@ def execute():
         if pid == 0:
             print 'forking process to background...'
             m_Args.remove(m_Args[-1])
-            os.execv(m_Args[0], m_Args)
+            # os.execv(m_Args[0], m_Args)
+            call(m_Args, stdout = fout, stdin = fin, stderr = ferr)
 
     # normal execution
     else:
-        call(m_Args)
-
-################################################################################
-# Counts the number of discreet entries (lines) in the command history and
-# returns that number.
-def getHistorySize():
-################################################################################
-    return len(open(m_History).readlines())
+        call(m_Args, stdout = fout, stdin = fin, stderr = ferr)
 
 ################################################################################
 # Writes the current contents of m_Args to the command history.  If there are at
 # least 1000 entries in the command history, then the new line is written to the
 # bottom, and the uppermost line is deleted.
-def writeToHistory():
+def writeToHistory(args):
 ################################################################################
-    count = getHistorySize()
+    count = len(open(m_History).readlines())
     
     if count >= 1000:
         # get a list of the file contents
@@ -215,7 +217,7 @@ def writeToHistory():
     
     history = open(m_History, 'a')
     
-    for string in m_Args:
+    for string in args:
         history.write(string + ' ')
 
     history.write('\n')
@@ -225,25 +227,26 @@ def writeToHistory():
 ################################################################################
 # The main program
 ################################################################################
-m_Home = '/home/' + os.getlogin() + '/'
-m_History = m_Home + '.shell_history'
-m_Aliases = m_Home + '.shell_aliases'
+m_Home = '/home/' + os.getlogin() 
+m_History = m_Home + '/.shell_history'
+m_Aliases = m_Home + '/.shell_aliases'
 m_Exit = False
 m_Path = os.environ['PATH'].split(os.pathsep)
+
+print '\'exit\' to quit, \'???\' to search history... '
+print 'please space-delimit everything!'
 
 while not m_Exit:
     line = prompt()
     m_Args = readLine(line)
-
-    if not m_Exit and m_Args:
+    
+    if m_Args and not m_Exit:
         status = searchAliases() or searchPath()
 
         if not status:
             print 'Command `%s` not found' % m_Args[0]
         
         else:
-            # add the command to the .shell_history file
-            writeToHistory()
-
             execute()
 
+        
