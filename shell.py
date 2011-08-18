@@ -42,7 +42,12 @@ def prompt():
     if not cwd:
         cwd = '/'
 
-    return raw_input('\n' + username + '@' + hostname + ':' + cwd + '> ')
+    try:
+        line = raw_input('\n' + username + '@' + hostname + ':' + cwd + '> ')
+        return line
+    
+    except EOFError, e:
+        exit(1)
 
 ################################################################################
 # Searches the .shell_history file for the passed string.  If a matching line is
@@ -171,7 +176,8 @@ def execute():
         if pid == 0:
             print 'forking process to background...'
             m_Args.remove(m_Args[-1])
-            os.execv(m_Args[0], m_Args)
+            # os.execv(m_Args[0], m_Args)
+            call(m_Args, stdout = fout, stdin = fin, stderr = ferr)
 
     # normal execution
     else:
