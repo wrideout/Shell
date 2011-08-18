@@ -13,12 +13,6 @@
 #   William Rideout
 #   Dustin Schoenbrun
 #   
-# Changelog:
-#   8/15/11 - Completed basic functionality, alias functionality, and history
-#               logging.
-#   8/16/11 - Added history searching, support for the `cd` command, and support
-#               for the '/' and '~' directories.  Added support for redirection,
-#               and background processes.
 
 import subprocess
 from subprocess import call
