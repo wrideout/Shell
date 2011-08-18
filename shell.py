@@ -85,13 +85,16 @@ def readLine(line):
         return 
     
     elif 'cd' in line:
+        path = args[1]
+
+        if os.path.exists(path):
+            os.chdir(path)
         
-        if '~' in line.split()[1]:
-            os.chdir(m_Home)
         else:
-            os.chdir(line.split()[1])
+            print 'cd: cannot access \'%s\': No such file or directory' % path
+        
         return
-    
+   
     else:
         return args
 
